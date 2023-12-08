@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:os="http://www.mulesoft.org/schema/mule/os"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd">
+	<db:config name="Database_Config" doc:name="Database Config" doc:id="52a0f8b6-87eb-4e34-859c-3f7ef38c0e68" >
+		<db:my-sql-connection host="sql12.freesqldatabase.com" port="3306" user="sql12668272" password="xY391E69tx" database="sql12668272" />
+	</db:config>
+	<os:object-store name="Object_store" doc:name="Object store" doc:id="93aed56a-3fcb-4c76-a1d3-ea79bf2c23ae" />
+	<flow name="watermarking2.0Flow" doc:id="072df3bd-0ca1-4fef-ae2a-c697ae9d536f" >
+		<scheduler doc:name="Scheduler" doc:id="60fa1674-ae5b-4ff6-9066-2164e28bc8f1" >
+			<scheduling-strategy >
+				<fixed-frequency frequency="1"/>
+			</scheduling-strategy>
+		</scheduler>
+		<os:retrieve doc:name="Retrieve" doc:id="a30b54d1-df9b-4dc9-9433-404fcec41ae6" key="demo" target="watermarking2.0">
+			<os:default-value ><![CDATA[0]]></os:default-value>
+		</os:retrieve>
+		<logger level="INFO" doc:name="Logger" doc:id="847830b7-8acd-43fd-86c5-6075a66306da" message='all data was received from db #[vars."watermarking2.0"]'/>
+		<db:select doc:name="Select" doc:id="e4363add-0ef2-4a37-89e5-1cf946aafcf0" config-ref="Database_Config">
+			<db:sql ><![CDATA[select * from Numbers where Memberno >:Memberno]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{
+	Memberno:vars."watermarking2.0"
+}]]]></db:input-parameters>
+		</db:select>
+		<logger level="INFO" doc:name="Logger" doc:id="6ac2fe5b-d494-479c-8c05-2dc25e8e1d52" message="#[%dw 2.0&#10;output application/json&#10;---&#10;payload]"/>
+		<os:store doc:name="Store" doc:id="d59e59aa-ed98-4733-a012-9115691e224b" key="demo" objectStore="Object_store">
+			<os:value ><![CDATA[#[max(payload map $.Memberno)]]]></os:value>
+		</os:store>
+	</flow>
+</mule>
